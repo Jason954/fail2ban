@@ -709,11 +709,13 @@ class Filter(JailThread):
 				if self.checkFindTime and unixTime > MyTime.time():
 					unixTime = MyTime.time()
 				tick = FailTicket(ip, unixTime, data=fail)
+
 				if self._inIgnoreIPList(ip, tick):
 					continue
 				logSys.info(
 					"[%s] Found %s - %s", self.jailName, ip, MyTime.time2str(unixTime)
 				)
+				logSys.info(tick)
 				attempts = self.failManager.addFailure(tick)
 				# avoid RC on busy filter (too many failures) - if attempts for IP/ID reached maxretry,
 				# we can speedup ban, so do it as soon as possible:

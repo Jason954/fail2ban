@@ -159,6 +159,15 @@ class Fail2BanDb(object):
 			");" \
 			"CREATE INDEX IF NOT EXISTS bips_timeofban ON bips(timeofban);" \
 			"CREATE INDEX IF NOT EXISTS bips_ip ON bips(ip);")
+		,('fails', "CREATE TABLE IF NOT EXISTS fails(" \
+			"ip TEXT NOT NULL, " \
+			"jail TEXT NOT NULL, " \
+			"match TEXT NOT NULL, " \
+			"timeoffail INTEGER NOT NULL, " \
+			"PRIMARY KEY(ip, jail, timeoffail), " \
+			"FOREIGN KEY(jail) REFERENCES jails(name) " \
+			");"
+	  	)
 	)
 	_CREATE_TABS = dict(_CREATE_SCRIPTS)
 
@@ -601,6 +610,23 @@ class Fail2BanDb(object):
 			"INSERT OR REPLACE INTO bips(ip, jail, timeofban, bantime, bancount, data) VALUES(?, ?, ?, ?, ?, ?)",
 			(ip, jail.name, int(round(ticket.getTime())), ticket.getBanTime(jail.actions.getBanTime()), ticket.getBanCount(),
 				data))
+
+	@commitandrollback
+	def addFail(self, cur, jail, ticket):
+		"""Add a logged match to the database.
+
+		Parameters
+		----------
+		jail : Jail
+			Jail in which the logged match has occurred.
+		ticket : failTicket
+			Ticket of the logged match to be added.
+		"""
+		ip = str(ticket.getID())
+		cur.execute(
+			"INSERT INTO fails(jail, ip, timeoffail, match) VALUES(?, ?, ?, ?, ?, ?)",
+			(jail.name, ip, int(round(ticket.getTime())), ticket.getMatch()))
+
 
 	@commitandrollback
 	def delBan(self, cur, jail, *args):

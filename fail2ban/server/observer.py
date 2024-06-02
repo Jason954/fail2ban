@@ -383,6 +383,13 @@ class ObserverThread(JailThread):
 			maxRetry = jail.filter.failManager.getMaxRetry()
 			db = jail.database
 			if db is not None:
+				# add new entry in failTicket for this match
+				logSys.info("Trying to add failure %s", ip)
+				print(ticket)
+				logSys.info("Jail: %s", jail)
+				logSys.info("Ticket: %s", ticket)
+				db.addFail(jail, ticket)
+
 				for banCount, timeOfBan, lastBanTime in db.getBan(ip, jail):
 					banCount = max(banCount, ticket.getBanCount())
 					retryCount = ((1 << (banCount if banCount < 20 else 20))/2 + 1)
