@@ -715,7 +715,6 @@ class Filter(JailThread):
 				logSys.info(
 					"[%s] Found %s - %s", self.jailName, ip, MyTime.time2str(unixTime)
 				)
-				logSys.info(tick)
 				attempts = self.failManager.addFailure(tick)
 				# avoid RC on busy filter (too many failures) - if attempts for IP/ID reached maxretry,
 				# we can speedup ban, so do it as soon as possible:
