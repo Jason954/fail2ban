@@ -370,7 +370,8 @@ class ObserverThread(JailThread):
         """
 
         # add fail entry
-        if jail.database is not None:
+        logSys.info(ticket)
+        if jail.database is not None and ticket.getBanTime() is None:
             jail.database.addFail(jail, ticket)
         # check jail active :
         if not jail.isAlive() or not jail.getBanTimeExtra("increment"):
