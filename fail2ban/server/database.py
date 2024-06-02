@@ -111,7 +111,7 @@ class Fail2BanDb(object):
 	filename
 	purgeage
 	"""
-	__version__ = 4
+	__version__ = 5
 	# Note all SCRIPTS strings must end in ';' for py26 compatibility
 	_CREATE_SCRIPTS = (
 		 ('fail2banDb', "CREATE TABLE IF NOT EXISTS fail2banDb(version INTEGER);")
@@ -392,6 +392,11 @@ class Fail2BanDb(object):
 							"INSERT OR REPLACE INTO bips(ip, jail, timeofban, bantime, bancount, data)"
 							"  SELECT ip, jail, timeofban, bantime, bancount, data FROM bans order by timeofban")
 
+			if version < 5 and not self._tableExists(cur, "fails"):
+				cur.executescript("BEGIN TRANSACTION;"
+								  "%s;\n"
+								  "UPDATE fail2banDb SET version = 5;"
+								  "COMMIT;" % Fail2BanDb._CREATE_TABS['fails'])
 			cur.execute("SELECT version FROM fail2banDb LIMIT 1")
 			return cur.fetchone()[0]
 		except Exception as e:
@@ -623,9 +628,12 @@ class Fail2BanDb(object):
 			Ticket of the logged match to be added.
 		"""
 		ip = str(ticket.getID())
+		# convert matches into a string
+		matches = ' '.join(str(x) for x in ticket.getMatches())
 		cur.execute(
-			"INSERT INTO fails(jail, ip, timeoffail, match) VALUES(?, ?, ?, ?, ?, ?)",
-			(jail.name, ip, int(round(ticket.getTime())), ticket.getMatch()))
+			"INSERT INTO fails(jail, ip, timeoffail, match) VALUES(?, ?, ?, ?)",
+			(jail.name, ip, int(round(ticket.getTime())), matches.strip()))
+
 
 
 	@commitandrollback
