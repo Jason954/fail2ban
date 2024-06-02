@@ -37,25 +37,26 @@ from .utils import Utils
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
 
+
 class ObserverThread(JailThread):
     """Handles observing a database, managing bad ips and ban increment.
 
-    Parameters
-    ----------
+	Parameters
+	----------
 
-    Attributes
-    ----------
-    daemon
-    ident
-    name
-    status
-    active : bool
-        Control the state of the thread.
-    idle : bool
-        Control the idle state of the thread.
-    sleeptime : int
-        The time the thread sleeps for in the loop.
-    """
+	Attributes
+	----------
+	daemon
+	ident
+	name
+	status
+	active : bool
+		Control the state of the thread.
+	idle : bool
+		Control the idle state of the thread.
+	sleeptime : int
+		The time the thread sleeps for in the loop.
+	"""
 
     # observer is event driven and it sleep organized incremental, so sleep intervals can be shortly:
     DEFAULT_SLEEP_INTERVAL = Utils.DEFAULT_SLEEP_INTERVAL / 10
@@ -77,7 +78,7 @@ class ObserverThread(JailThread):
         self._timers = {}
         self._paused = False
         self.__db = None
-        self.__db_purge_interval = 60*60
+        self.__db_purge_interval = 60 * 60
         # observer is a not main thread:
         self.daemon = True
 
@@ -99,18 +100,18 @@ class ObserverThread(JailThread):
     def __len__(self):
         return len(self._queue)
 
-    def __eq__(self, other): # Required for Threading
+    def __eq__(self, other):  # Required for Threading
         return False
 
-    def __hash__(self): # Required for Threading
+    def __hash__(self):  # Required for Threading
         return id(self)
 
     def add_named_timer(self, name, starttime, *event):
         """Add a named timer event to queue will start (and wake) in 'starttime' seconds
-
-        Previous timer event with same name will be canceled and trigger self into
-        queue after new 'starttime' value
-        """
+		
+		Previous timer event with same name will be canceled and trigger self into 
+		queue after new 'starttime' value
+		"""
         t = self._timers.get(name, None)
         if t is not None:
             t.cancel()
@@ -120,7 +121,7 @@ class ObserverThread(JailThread):
 
     def add_timer(self, starttime, *event):
         """Add a timer event to queue will start (and wake) in 'starttime' seconds
-        """
+		"""
         # in testing we should wait (looping) for the possible time drifts:
         if MyTime.myTime is not None and starttime:
             # test time after short sleep:
@@ -145,7 +146,7 @@ class ObserverThread(JailThread):
 
     def pulse_notify(self):
         """Notify wakeup (sets /and resets/ notify event)
-        """
+		"""
         if not self._paused:
             n = self._notify
             if n:
@@ -154,7 +155,7 @@ class ObserverThread(JailThread):
 
     def add(self, *event):
         """Add a event to queue and notify thread to wake up.
-        """
+		"""
         ## lock and add new event to queue:
         with self._queue_lock:
             self._queue.append(event)
@@ -162,7 +163,7 @@ class ObserverThread(JailThread):
 
     def add_wn(self, *event):
         """Add a event to queue without notifying thread to wake up.
-        """
+		"""
         ## lock and add new event to queue:
         with self._queue_lock:
             self._queue.append(event)
@@ -173,13 +174,13 @@ class ObserverThread(JailThread):
     def run(self):
         """Main loop for Threading.
 
-        This function is the main loop of the thread.
+		This function is the main loop of the thread.
 
-        Returns
-        -------
-        bool
-            True when the thread exits nicely.
-        """
+		Returns
+		-------
+		bool
+			True when the thread exits nicely.
+		"""
         logSys.info("Observer start...")
         ## first time create named timer to purge database each hour (clean old entries) ...
         self.add_named_timer('DB_PURGE', self.__db_purge_interval, 'db_purge')
@@ -191,12 +192,12 @@ class ObserverThread(JailThread):
             'db_set': self.db_set,
             'db_purge': self.db_purge,
             # service events of observer self:
-            'is_alive' : self.isAlive,
+            'is_alive': self.isAlive,
             'is_active': self.isActive,
             'start': self.start,
             'stop': self.stop,
-            'nop': lambda:(),
-            'shutdown': lambda:()
+            'nop': lambda: (),
+            'shutdown': lambda: ()
         }
         try:
             ## check it self with sending is_alive event
@@ -280,8 +281,8 @@ class ObserverThread(JailThread):
             # wait max wtime seconds until full (events remaining)
             if self.wait_empty(wtime) or forceQuit:
                 n.clear()
-                self.active = False; # leave outer (active) loop
-                self._paused = True; # leave inner (queue) loop
+                self.active = False;  # leave outer (active) loop
+                self._paused = True;  # leave inner (queue) loop
                 self.__db = None
             else:
                 self._notify = n
@@ -295,7 +296,7 @@ class ObserverThread(JailThread):
 
     def wait_empty(self, sleeptime=None):
         """Wait observer is running and returns if observer has no more events (queue is empty)
-        """
+		"""
         time.sleep(ObserverThread.DEFAULT_SLEEP_INTERVAL)
         if sleeptime is not None:
             e = MyTime.time() + sleeptime
@@ -312,10 +313,9 @@ class ObserverThread(JailThread):
         self.wait_idle(0.001)
         return not self.is_full
 
-
     def wait_idle(self, sleeptime=None):
         """Wait observer is running and returns if observer idle (observer sleeps)
-        """
+		"""
         time.sleep(ObserverThread.DEFAULT_SLEEP_INTERVAL)
         if self.idle:
             return True
@@ -339,11 +339,10 @@ class ObserverThread(JailThread):
         # wake after pause ended
         self.pulse_notify()
 
-
     @property
     def status(self):
         """Status of observer to be implemented. [TODO]
-        """
+		"""
         return ('', '')
 
     ## -----------------------------------------
@@ -369,10 +368,10 @@ class ObserverThread(JailThread):
 
         Observer will check ip was known (bad) and possibly increase an retry count
         """
+
         # add fail entry
         if jail.database is not None:
             jail.database.addFail(jail, ticket)
-
         # check jail active :
         if not jail.isAlive() or not jail.getBanTimeExtra("increment"):
             return
@@ -389,7 +388,7 @@ class ObserverThread(JailThread):
             if db is not None:
                 for banCount, timeOfBan, lastBanTime in db.getBan(ip, jail):
                     banCount = max(banCount, ticket.getBanCount())
-                    retryCount = ((1 << (banCount if banCount < 20 else 20))/2 + 1)
+                    retryCount = ((1 << (banCount if banCount < 20 else 20)) / 2 + 1)
                     # if lastBanTime == -1 or timeOfBan + lastBanTime * 2 > MyTime.time():
                     # 	retryCount = maxRetry
                     break
@@ -415,8 +414,7 @@ class ObserverThread(JailThread):
                 jail.filter.performBan(ip)
 
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
-
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     class BanTimeIncr:
         def __init__(self, banTime, banCount):
@@ -430,11 +428,11 @@ class ObserverThread(JailThread):
     def incrBanTime(self, jail, banTime, ticket):
         """Check for IP address to increment ban time (if was already banned).
 
-        Returns
-        -------
-        float
-            new ban time.
-        """
+		Returns
+		-------
+		float
+			new ban time.
+		"""
         # check jail active :
         if not jail.isAlive() or not jail.database:
             return banTime
@@ -450,7 +448,7 @@ class ObserverThread(JailThread):
                         :
                     # increment count in ticket (if still not increased from banmanager, test-cases?):
                     if banCount >= ticket.getBanCount():
-                        ticket.setBanCount(banCount+1)
+                        ticket.setBanCount(banCount + 1)
                     logSys.debug('IP %s was already banned: %s #, %s', ip, banCount, timeOfBan);
                     # calculate new ban time
                     if banCount > 0:
@@ -460,21 +458,22 @@ class ObserverThread(JailThread):
                     if ticket.getTime() > timeOfBan:
                         logSys.info('[%s] IP %s is bad: %s # last %s - incr %s to %s' % (jail.name, ip, banCount,
                                                                                          MyTime.time2str(timeOfBan),
-                                                                                         MyTime.seconds2str(orgBanTime), MyTime.seconds2str(banTime)))
+                                                                                         MyTime.seconds2str(orgBanTime),
+                                                                                         MyTime.seconds2str(banTime)))
                     else:
                         ticket.restored = True
                     break
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
         return banTime
 
     def banFound(self, ticket, jail, btime):
         """ Notify observer a ban occurred for ip
 
-        Observer will check ip was known (bad) and possibly increase/prolong a ban time
-        Secondary we will actualize the bans and bips (bad ip) in database
-        """
-        if ticket.restored: # pragma: no cover (normally not resored tickets only)
+		Observer will check ip was known (bad) and possibly increase/prolong a ban time
+		Secondary we will actualize the bans and bips (bad ip) in database
+		"""
+        if ticket.restored:  # pragma: no cover (normally not resored tickets only)
             return
         try:
             oldbtime = btime
@@ -508,14 +507,14 @@ class ObserverThread(JailThread):
                 # add to database always only after ban time was calculated an not yet already banned:
                 jail.database.addBan(jail, ticket)
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
 
     def prolongBan(self, ticket, jail):
         """ Notify observer a ban occurred for ip
 
-        Observer will check ip was known (bad) and possibly increase/prolong a ban time
-        Secondary we will actualize the bans and bips (bad ip) in database
-        """
+		Observer will check ip was known (bad) and possibly increase/prolong a ban time
+		Secondary we will actualize the bans and bips (bad ip) in database
+		"""
         try:
             btime = ticket.getBanTime()
             ip = ticket.getID()
@@ -523,11 +522,13 @@ class ObserverThread(JailThread):
             # prolong ticket via actions that expected this:
             jail.actions._prolongBan(ticket)
         except Exception as e:
-            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel()<=logging.DEBUG)
+            logSys.error('%s', e, exc_info=logSys.getEffectiveLevel() <= logging.DEBUG)
+
 
 # Global observer initial created in server (could be later rewritten via singleton)
 class _Observers:
     def __init__(self):
         self.Main = None
+
 
 Observers = _Observers()
