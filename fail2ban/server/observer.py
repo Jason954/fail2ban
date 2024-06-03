@@ -369,6 +369,10 @@ class ObserverThread(JailThread):
 
 		Observer will check ip was known (bad) and possibly increase an retry count
 		"""
+		# add fail entry
+		logSys.info(ticket)
+		if jail.database is not None and ticket.getBanTime() is None:
+			jail.database.addFail(jail, ticket)
 		# check jail active :
 		if not jail.isAlive() or not jail.getBanTimeExtra("increment"):
 			return
